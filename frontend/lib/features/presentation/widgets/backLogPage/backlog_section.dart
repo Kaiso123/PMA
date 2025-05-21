@@ -33,7 +33,7 @@ class BacklogSection extends StatelessWidget {
       builder: (context, provider, child) {
         print('BacklogSection Consumer rebuilt');
         print('Backlog issues in BacklogSection: ${provider.backlogIssues}');
-        final backlogIssues = provider.backlogIssues;
+        final filteredBacklogIssues = provider.filteredBacklogIssues;
         return DragTarget<Issue>(
           onAccept: (issue) {
             Provider.of<BacklogProvider>(context, listen: false)
@@ -56,14 +56,23 @@ class BacklogSection extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Backlog (${backlogIssues.length} work item${backlogIssues.length != 1 ? "s" : ""})',
+                  'Backlog (${filteredBacklogIssues.length} work item${filteredBacklogIssues.length != 1 ? "s" : ""})',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 8),
-                ...backlogIssues.map((issue) => IssueItem(
+                if (filteredBacklogIssues.isEmpty &&
+                    provider.searchQuery.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      'No backlog issues found for "${provider.searchQuery}"',
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                  ),
+                ...filteredBacklogIssues.map((issue) => IssueItem(
                       id: issue.issueId, // Truyền id
                       projectId: issue.projectId,
                       title: issue.title,
@@ -98,10 +107,12 @@ class BacklogSection extends StatelessWidget {
                         provider.updateBacklogIssueEndTime(
                             issue.issueId.toString(), newEndTime);
                       },
-                       onAssigneChange: (newAssigneeId) {
-                          final provider = Provider.of<BacklogProvider>(context, listen: false);
-                          provider.updateBacklogIssueAssignee(issue.issueId.toString(), int.parse(newAssigneeId));
-                        },
+                      onAssigneChange: (newAssigneeId) {
+                        final provider = Provider.of<BacklogProvider>(context,
+                            listen: false);
+                        provider.updateBacklogIssueAssignee(
+                            issue.issueId.toString(), int.parse(newAssigneeId));
+                      },
                     )),
                 const SizedBox(height: 12),
                 isManager

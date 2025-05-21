@@ -7,9 +7,31 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../blocs/backlog_provider2.dart';
 
-class ListPage extends StatelessWidget {
+class ListPage extends StatefulWidget {
   final Project project;
   const ListPage({Key? key, required this.project}) : super(key: key);
+
+  @override
+  _ListPageState createState() => _ListPageState();
+}
+
+class _ListPageState extends State<ListPage> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      Provider.of<BacklogProvider>(context, listen: false)
+          .setListPageSearchQuery(_searchController.text);
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,14 +48,10 @@ class ListPage extends StatelessWidget {
 
           // Lấy tất cả issues từ sprints và backlog
           final List<Issue> allIssues = [];
-          for (var sprint in provider.sprints) {
+          for (var sprint in provider.filteredSprintsForListPage) {
             allIssues.addAll(sprint.issues);
           }
-          allIssues.addAll(provider.backlogIssues);
-
-          if (allIssues.isEmpty) {
-            return const Center(child: Text('No issues available'));
-          }
+          allIssues.addAll(provider.filteredBacklogIssuesForListPage);
 
           return SingleChildScrollView(
             child: Column(
@@ -53,15 +71,27 @@ class ListPage extends StatelessWidget {
                             border: Border.all(color: Colors.grey[300]!),
                             borderRadius: BorderRadius.circular(8.0),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
                               Icon(Icons.search, size: 20, color: Colors.grey),
                               SizedBox(width: 8),
                               Expanded(
                                 child: TextField(
+                                  controller: _searchController,
                                   decoration: InputDecoration(
                                     hintText: 'Search issues...',
                                     border: InputBorder.none,
+                                    suffixIcon:
+                                        _searchController.text.isNotEmpty
+                                            ? IconButton(
+                                                icon: const Icon(Icons.clear,
+                                                    size: 20,
+                                                    color: Colors.grey),
+                                                onPressed: () {
+                                                  _searchController.clear();
+                                                },
+                                              )
+                                            : null,
                                   ),
                                 ),
                               ),
@@ -86,7 +116,7 @@ class ListPage extends StatelessWidget {
                   child: Row(
                     children: [
                       Text(
-                        'Projects / ${project.name}',
+                        'Projects / ${widget.project.name}',
                         style:
                             const TextStyle(fontSize: 14, color: Colors.grey),
                       ),
@@ -103,7 +133,7 @@ class ListPage extends StatelessWidget {
                   ),
                 ),
                 // Nút Create
-                project.isManager!
+                widget.project.isManager!
                     ? Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16.0, vertical: 8.0),
@@ -115,13 +145,14 @@ class ListPage extends StatelessWidget {
                               (issue) {
                                 Provider.of<BacklogProvider>(context,
                                         listen: false)
-                                    .CreatIssueToBacklog(issue, project.projectId!);
+                                    .CreatIssueToBacklog(
+                                        issue, widget.project.projectId!);
                                 overlayEntry?.remove();
                               },
                               () {
                                 overlayEntry?.remove();
                               },
-                              project.projectId!,
+                              widget.project.projectId!,
                               0,
                             );
                             Overlay.of(context).insert(overlayEntry);
@@ -140,6 +171,19 @@ class ListPage extends StatelessWidget {
                         ),
                       )
                     : SizedBox.shrink(),
+                if (allIssues.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Center(
+                      child: Text(
+                        provider.listPageSearchQuery.isEmpty
+                            ? 'No issues available'
+                            : 'No issues found for "${provider.listPageSearchQuery}"',
+                        style:
+                            const TextStyle(fontSize: 16, color: Colors.grey),
+                      ),
+                    ),
+                  ),
                 // Danh sách cards
                 ListView.builder(
                   shrinkWrap: true,
@@ -154,7 +198,7 @@ class ListPage extends StatelessWidget {
                               (sprint) => sprint.id == issue.sprintId,
                               orElse: () => Sprint(
                                 id: 0,
-                                projectId: project.projectId!,
+                                projectId: widget.project.projectId!,
                                 name: 'Unknown',
                                 description: '',
                                 created: DateTime.now(),
@@ -170,7 +214,7 @@ class ListPage extends StatelessWidget {
                       issue: issue,
                       sprintName: sprintName,
                       provider: provider,
-                      isManager: project.isManager!,
+                      isManager: widget.project.isManager!,
                     );
                   },
                 ),

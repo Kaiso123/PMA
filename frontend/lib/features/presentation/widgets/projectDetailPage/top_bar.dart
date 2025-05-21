@@ -1,4 +1,6 @@
+import 'package:doan/features/presentation/blocs/backlog_provider2.dart';
 import 'package:doan/features/presentation/pages/projects_pages.dart';
+import 'package:doan/features/presentation/widgets/projectDetailPage/components/your_work_overlay.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,8 +10,10 @@ import 'top_bar_item.dart';
 
 class TopBar extends StatelessWidget {
   final Project project;
+  final BuildContext fatherContext;
 
-  const TopBar({Key? key, required this.project}) : super(key: key);
+  const TopBar({Key? key, required this.project, required this.fatherContext})
+      : super(key: key);
 
   void _showProjectOverlay(BuildContext context) {
     final overlay = Overlay.of(context);
@@ -161,7 +165,20 @@ class TopBar extends StatelessWidget {
             iconColor: Colors.blue,
             iconSize: 24,
           ),
-          TopBarItem(title: 'Your work'),
+          TopBarItem(
+            title: 'Your work',
+            onTap: () {
+              final backlogProvider = context
+                  .read<BacklogProvider>(); 
+              final overlayEntry = createYourWorkOverlayEntry(
+                context,
+                project,
+                () {},
+                backlogProvider, 
+              );
+              Overlay.of(context).insert(overlayEntry);
+            },
+          ),
           TopBarItem(
             title: 'Project',
             onTap: () => _showProjectOverlay(context),

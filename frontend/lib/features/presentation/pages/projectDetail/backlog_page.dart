@@ -6,10 +6,32 @@ import 'package:doan/features/presentation/widgets/backLogPage/sprint_section.da
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class BacklogPage extends StatelessWidget {
+class BacklogPage extends StatefulWidget {
   final Project project;
 
   const BacklogPage({Key? key, required this.project}) : super(key: key);
+
+  @override
+  _BacklogPageState createState() => _BacklogPageState();
+}
+
+class _BacklogPageState extends State<BacklogPage> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      Provider.of<BacklogProvider>(context, listen: false)
+          .setSearchQuery(_searchController.text);
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,15 +55,24 @@ class BacklogPage extends StatelessWidget {
                           border: Border.all(color: Colors.grey),
                           borderRadius: BorderRadius.circular(4.0),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
                             Icon(Icons.search, size: 20, color: Colors.grey),
                             SizedBox(width: 8),
                             Expanded(
                               child: TextField(
+                                controller: _searchController,
                                 decoration: InputDecoration(
                                   hintText: 'Search',
                                   border: InputBorder.none,
+                                  suffixIcon: _searchController.text.isNotEmpty
+                                        ? IconButton(
+                                            icon: const Icon(Icons.clear, size: 20, color: Colors.grey),
+                                            onPressed: () {
+                                              _searchController.clear();
+                                            },
+                                          )
+                                        : null,
                                 ),
                               ),
                             ),
@@ -60,12 +91,11 @@ class BacklogPage extends StatelessWidget {
 
               // Breadcrumb
               Padding(
-                padding:
-                    const EdgeInsets.fromLTRB(8,8,8,0),
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
                 child: Row(
                   children: [
                     Text(
-                      'Projects / ${project.name ?? 'Unnamed Project'}',
+                      'Projects / ${widget.project.name ?? 'Unnamed Project'}',
                       style: const TextStyle(fontSize: 14, color: Colors.grey),
                     ),
                     const SizedBox(width: 8),
@@ -78,7 +108,7 @@ class BacklogPage extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    project.isManager!
+                    widget.project.isManager!
                         ? TextButton(
                             onPressed: () {
                               OverlayEntry? overlayEntry;
@@ -87,7 +117,8 @@ class BacklogPage extends StatelessWidget {
                                 (newSprint) {
                                   Provider.of<BacklogProvider>(context,
                                           listen: false)
-                                      .createSprint(newSprint, project.projectId!);
+                                      .createSprint(
+                                          newSprint, widget.project.projectId!);
                                   overlayEntry?.remove();
                                   overlayEntry = null;
                                 },
@@ -95,7 +126,7 @@ class BacklogPage extends StatelessWidget {
                                   overlayEntry?.remove();
                                   overlayEntry = null;
                                 },
-                                project.projectId!,
+                                widget.project.projectId!,
                               );
                               Overlay.of(context).insert(overlayEntry!);
                             },
@@ -121,22 +152,39 @@ class BacklogPage extends StatelessWidget {
                       return Center(
                           child: Text('Error: ${provider.errorMessage}'));
                     }
+                    final filteredSprints = provider.filteredSprints;
+
                     return ListView(
                       children: [
-                        ...provider.sprints.asMap().entries.map((entry) {
+                        if (filteredSprints.isEmpty &&
+                            provider.filteredBacklogIssues.isEmpty)
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Text(
+                                'No issues found for "${provider.searchQuery}"',
+                                style:
+                                    TextStyle(fontSize: 16, color: Colors.grey),
+                              ),
+                            ),
+                          ),
+                        ...filteredSprints.asMap().entries.map((entry) {
                           final index = entry.key;
                           final sprint = entry.value;
+                          if (sprint.issues.isEmpty && provider.searchQuery.isNotEmpty) {
+                            return SizedBox.shrink(); 
+                          }
                           return SprintSection(
                             sprintName: sprint.name,
                             issueCount: sprint.issues.length,
                             issues: sprint.issues,
                             sprintIndex: index,
-                            projectId: project.projectId!,
+                            projectId: widget.project.projectId!,
                             sprintId: sprint.id,
-                            isManager: project.isManager!,
+                            isManager: widget.project.isManager!,
                           );
                         }),
-                        const SizedBox(height: 80), 
+                        const SizedBox(height: 80),
                       ],
                     );
                   },
@@ -161,8 +209,8 @@ class BacklogPage extends StatelessWidget {
                 ),
                 child: BacklogSection(
                   scrollController: scrollController,
-                  projectId: project.projectId!,
-                  isManager: project.isManager!,
+                  projectId: widget.project.projectId!,
+                  isManager: widget.project.isManager!,
                 ),
               );
             },

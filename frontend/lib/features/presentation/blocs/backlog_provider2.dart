@@ -17,11 +17,15 @@ class BacklogProvider with ChangeNotifier {
   List<Issue> _backlogIssues = [];
   bool _isLoading = false;
   String? _errorMessage;
+  String _searchQuery = '';
+  String _listPageSearchQuery = '';
 
   List<Sprint> get sprints => _sprints;
   List<Issue> get backlogIssues => _backlogIssues;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  String get searchQuery => _searchQuery;
+  String get listPageSearchQuery => _listPageSearchQuery;
 
   BacklogProvider({
     required this.getSprintsUseCase,
@@ -33,6 +37,85 @@ class BacklogProvider with ChangeNotifier {
     required this.deleteSprintUseCase,
     required this.deleteIssueUseCase,
   });
+
+  void setSearchQuery(String query) {
+    _searchQuery = query.trim().toLowerCase();
+    notifyListeners();
+  }
+
+  void setListPageSearchQuery(String query) {
+    _listPageSearchQuery = query.trim().toLowerCase();
+    notifyListeners();
+  }
+
+  // Lấy danh sách sprint dựa trên searchQuery
+  List<Sprint> get filteredSprints {
+    if (_searchQuery.isEmpty) {
+      return _sprints;
+    }
+    return _sprints.map((sprint) {
+      final filteredIssues = sprint.issues
+          .where((issue) => issue.title.toLowerCase().contains(_searchQuery))
+          .toList();
+      return Sprint(
+        id: sprint.id,
+        projectId: sprint.projectId,
+        name: sprint.name,
+        description: sprint.description,
+        created: sprint.created,
+        endTime: sprint.endTime,
+        status: sprint.status,
+        priority: sprint.priority,
+        issues: filteredIssues,
+      );
+    }).toList();
+  }
+
+  // Lấy danh sách backlog issues dựa trên searchQuery
+  List<Issue> get filteredBacklogIssues {
+    if (_searchQuery.isEmpty) {
+      return _backlogIssues;
+    }
+    return _backlogIssues
+        .where((issue) => issue.title.toLowerCase().contains(_searchQuery))
+        .toList();
+  }
+
+
+  //Lấy danh sách sprint cho listPage
+  List<Sprint> get filteredSprintsForListPage {
+    if (_listPageSearchQuery.isEmpty) {
+      return _sprints;
+    }
+    return _sprints.map((sprint) {
+      final filteredIssues = sprint.issues
+          .where((issue) =>
+              issue.title.toLowerCase().contains(_listPageSearchQuery))
+          .toList();
+      return Sprint(
+        id: sprint.id,
+        projectId: sprint.projectId,
+        name: sprint.name,
+        description: sprint.description,
+        created: sprint.created,
+        endTime: sprint.endTime,
+        status: sprint.status,
+        priority: sprint.priority,
+        issues: filteredIssues,
+      );
+    }).toList();
+  }
+
+  //Lấy danh sách backlog cho listpage
+  List<Issue> get filteredBacklogIssuesForListPage {
+    if (_listPageSearchQuery.isEmpty) {
+      return _backlogIssues;
+    }
+    return _backlogIssues
+        .where(
+            (issue) => issue.title.toLowerCase().contains(_listPageSearchQuery))
+        .toList();
+  }
 
   Future<void> fetchBacklogData(int projectId) async {
     _isLoading = true;

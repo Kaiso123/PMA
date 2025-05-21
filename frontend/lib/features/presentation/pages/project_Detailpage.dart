@@ -62,7 +62,7 @@ class _ProjectItemDetailState extends State<ProjectItemDetail> {
           children: [
             Column(
               children: [
-                TopBar(project: widget.project),
+                TopBar(project: widget.project, fatherContext: context,),
               ],
             ),
             SidebarLayout(
