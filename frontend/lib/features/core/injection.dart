@@ -34,12 +34,12 @@ final getIt = GetIt.instance;
 void setupDependencies() {
   //Core
   getIt.registerSingleton<ApiClient>(
-    ApiClient(baseUrl: 'http://192.168.170.200:7105'),
+    ApiClient(baseUrl: 'http://192.168.1.200:7105'),
   );
   // Data
   getIt.registerLazySingleton(() => http.Client());
   getIt.registerLazySingleton<ProjectRemoteDataSource>(
-    () => ProjectRemoteDataSource(client: getIt<http.Client>()),
+    () => ProjectRemoteDataSource(apiClient: getIt<ApiClient>()),
   );
   getIt.registerLazySingleton<ProjectRepository>(
     () => ProjectRepositoryImpl(
@@ -58,13 +58,13 @@ void setupDependencies() {
     BacklogRepositoryImpl(remoteDataSource: getIt<BacklogRemoteDataSource>()),
   );
   getIt.registerLazySingleton<EventRemoteDataSource>(
-    () => EventRemoteDataSource(client: getIt<http.Client>()),
+    () => EventRemoteDataSource(apiClient: getIt<ApiClient>()),
   );
   getIt.registerLazySingleton<EventRepository>(
     () => EventRepositoryImpl(remoteDataSource: getIt<EventRemoteDataSource>()),
   );
   getIt.registerLazySingleton<AuthRemoteDataSource>(
-    () => AuthRemoteDataSource(client: getIt<http.Client>()),
+    () => AuthRemoteDataSource(apiClient: getIt<ApiClient>()),
   );
   getIt.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(remoteDataSource: getIt<AuthRemoteDataSource>()),
