@@ -153,6 +153,7 @@ class _SprintSectionState extends State<SprintSection> {
                         projectId: issue.projectId,
                         title: issue.title,
                         status: issue.status,
+                        sprint: widget.sprintName,
                         description: issue.description ?? 'Description...',
                         assignee: issue.assigneeId?.toString() ?? 'Unassigned',
                         priority: issue.priority,
@@ -182,6 +183,10 @@ class _SprintSectionState extends State<SprintSection> {
                               listen: false);
                           provider.updateIssueEndTime(widget.sprintIndex,
                               issue.issueId.toString(), newEndTime);
+                        },
+                        onAssigneChange: (newAssigneeId) {
+                          final provider = Provider.of<BacklogProvider>(context, listen: false);
+                          provider.updateIssueAssignee(widget.sprintIndex, issue.issueId.toString(), int.parse(newAssigneeId));
                         },
                       ),
                     ),

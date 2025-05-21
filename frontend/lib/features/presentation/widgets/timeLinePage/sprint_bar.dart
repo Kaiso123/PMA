@@ -80,7 +80,7 @@ class SprintBar extends StatelessWidget {
                       : Colors.blueAccent,
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Column(
+                child: durationDays >= 25 ?Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Padding(
@@ -118,7 +118,7 @@ class SprintBar extends StatelessWidget {
                       ),
                     ),
                   ],
-                ),
+                ): const SizedBox.shrink(),
               ),
               //Kéo giữa
               isManager

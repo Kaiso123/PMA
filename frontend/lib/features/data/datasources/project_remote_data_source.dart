@@ -17,7 +17,10 @@ class ProjectRemoteDataSource {
     if (projectResponse.errorCode != 0) {
       throw Exception(projectResponse.errorMessage);
     }
-    return ProjectModel.fromJson(projectResponse.data as Map<String, dynamic>);
+     ProjectModel projectR = new ProjectModel(
+        projectId: projectResponse.data
+     );
+    return projectR;
   }
 
   // Lấy danh sách project theo userId

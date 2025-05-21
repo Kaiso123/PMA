@@ -4,7 +4,7 @@ import 'package:doan/features/domain/entities/issue.dart';
 import './component/issues_item_components.dart';
 
 class IssueItem extends StatefulWidget {
-  final int id; // Thêm id
+  final int id;
   final int projectId;
   final String title;
   final String sprint;
@@ -19,10 +19,11 @@ class IssueItem extends StatefulWidget {
   final Function(String)? onDescriptionChanged;
   final Function(String)? onPriorityChanged;
   final Function(String)? onEndTimeChanged;
+  final Function(String)? onAssigneChange;
 
   const IssueItem({
     Key? key,
-    required this.id, // Thêm id
+    required this.id,
     required this.projectId,
     required this.title,
     this.sprint = 'Backlog',
@@ -37,6 +38,7 @@ class IssueItem extends StatefulWidget {
     this.onDescriptionChanged,
     this.onPriorityChanged,
     this.onEndTimeChanged,
+    this.onAssigneChange,
   }) : super(key: key);
 
   @override
@@ -74,61 +76,71 @@ class _IssueItemState extends State<IssueItem> {
     _statusOverlayEntry = null;
   }
 
-void _showDetailOverlay(BuildContext context) {
-  _detailOverlayEntry = createDetailOverlayEntry(
-    context,
-    widget.title,
-    widget.status,
-    widget.description,
-    widget.assignee,
-    widget.priority,
-    widget.sprint,
-    widget.created,
-    widget.endTime,
-    (status) {
-      if (widget.isDraggable) {
-        print('IssueItem: Status changed in detail to $status for issue ${widget.id}');
-        widget.onStatusChanged?.call(status);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Chỉ quản lý mới có thể thay đổi trạng thái.')),
-        );
-      }
-    },
-    (description) {
-      print('IssueItem: Description changed to $description for issue ${widget.id}');
-      widget.onDescriptionChanged?.call(description);
-    },
-    (priority) {
-      if (widget.isDraggable) {
-        print('IssueItem: Priority changed to $priority for issue ${widget.id}');
-        widget.onPriorityChanged?.call(priority);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Chỉ quản lý mới có thể thay đổi ưu tiên.')),
-        );
-      }
-    },
-    (endTime) {
-      if (widget.isDraggable) {
-        print('IssueItem: End time changed to $endTime for issue ${widget.id}');
-        widget.onEndTimeChanged?.call(endTime);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Chỉ quản lý mới có thể thay đổi thời gian kết thúc.')),
-        );
-      }
-    },
-    _hideDetailOverlay,
-  );
-  Overlay.of(context).insert(_detailOverlayEntry!);
-}
+  void _showDetailOverlay(BuildContext context) {
+    _detailOverlayEntry = createDetailOverlayEntry(
+      context,
+      widget.title,
+      widget.status,
+      widget.description,
+      widget.assignee,
+      widget.priority,
+      widget.sprint,
+      widget.created,
+      widget.endTime,
+      (status) {
+        if (widget.isDraggable) {
+          print(
+              'IssueItem: Status changed in detail to $status for issue ${widget.id}');
+          widget.onStatusChanged?.call(status);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text('Chỉ quản lý mới có thể thay đổi trạng thái.')),
+          );
+        }
+      },
+      (description) {
+        print(
+            'IssueItem: Description changed to $description for issue ${widget.id}');
+        widget.onDescriptionChanged?.call(description);
+      },
+      (priority) {
+        if (widget.isDraggable) {
+          print(
+              'IssueItem: Priority changed to $priority for issue ${widget.id}');
+          widget.onPriorityChanged?.call(priority);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Chỉ quản lý mới có thể thay đổi ưu tiên.')),
+          );
+        }
+      },
+      (endTime) {
+        if (widget.isDraggable) {
+          print(
+              'IssueItem: End time changed to $endTime for issue ${widget.id}');
+          widget.onEndTimeChanged?.call(endTime);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(
+                    'Chỉ quản lý mới có thể thay đổi thời gian kết thúc.')),
+          );
+        }
+      },
+      (Assigne) {
+        print('IssueItem: Assigne changed to $Assigne for issue ${widget.id}');
+        widget.onAssigneChange?.call(Assigne);
+      },
+      _hideDetailOverlay,
+    );
+    Overlay.of(context).insert(_detailOverlayEntry!);
+  }
 
   void _hideDetailOverlay() {
     _detailOverlayEntry?.remove();
     _detailOverlayEntry = null;
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -187,7 +199,9 @@ void _showDetailOverlay(BuildContext context) {
                 priority: widget.priority,
                 assigneeId: int.tryParse(widget.assignee),
                 created: DateTime.tryParse(widget.created) ?? DateTime.now(),
-                endTime: widget.endTime.isEmpty ? null : DateTime.tryParse(widget.endTime),
+                endTime: widget.endTime.isEmpty
+                    ? null
+                    : DateTime.tryParse(widget.endTime),
                 sprintId: null,
               ),
               feedback: Material(

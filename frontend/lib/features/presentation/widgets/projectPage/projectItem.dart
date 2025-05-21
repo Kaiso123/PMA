@@ -81,6 +81,7 @@ class _ProjectItemState extends State<ProjectItem> {
                         fontSize: 14,
                         color: Colors.grey,
                       ),
+                      maxLines: 2,
                     ),
                   ],
                 ),

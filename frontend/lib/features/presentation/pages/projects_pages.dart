@@ -57,6 +57,7 @@ class _ProjectPageState extends State<ProjectPage> {
                       controller: nameController,
                       decoration:
                           const InputDecoration(labelText: 'Project Name'),
+                      maxLength: 16,
                     ),
                     TextField(
                       controller: descriptionController,

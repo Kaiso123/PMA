@@ -98,6 +98,10 @@ class BacklogSection extends StatelessWidget {
                         provider.updateBacklogIssueEndTime(
                             issue.issueId.toString(), newEndTime);
                       },
+                       onAssigneChange: (newAssigneeId) {
+                          final provider = Provider.of<BacklogProvider>(context, listen: false);
+                          provider.updateBacklogIssueAssignee(issue.issueId.toString(), int.parse(newAssigneeId));
+                        },
                     )),
                 const SizedBox(height: 12),
                 isManager

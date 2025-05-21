@@ -119,6 +119,27 @@ class IssueCard extends StatelessWidget {
               );
             }
           },
+          (newAssigneeId) {
+            if (isManager) {
+              if (issue.sprintId == null) {
+                provider.updateBacklogIssueAssignee(
+                    issue.issueId.toString(), int.parse(newAssigneeId));
+              } else {
+                final sprintIndex = provider.sprints
+                    .indexWhere((sprint) => sprint.id == issue.sprintId);
+                if (sprintIndex != -1) {
+                  provider.updateIssueAssignee(sprintIndex,
+                      issue.issueId.toString(), int.parse(newAssigneeId));
+                }
+              }
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                    content: Text(
+                        'Chỉ quản lý mới có thể thay đổi thời gian kết thúc.')),
+              );
+            }
+          },
           () {
             detailOverlayEntry?.remove();
           },

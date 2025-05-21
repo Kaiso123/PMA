@@ -1,5 +1,7 @@
+import 'package:doan/features/presentation/blocs/user_project_bloc.dart';
 import 'package:doan/features/presentation/widgets/backLogPage/component/issues_item_components.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 OverlayEntry createDetailOverlayEntry(
   BuildContext context,
@@ -15,22 +17,28 @@ OverlayEntry createDetailOverlayEntry(
   Function(String)? onDescriptionChanged,
   Function(String)? onPriorityChanged,
   Function(String)? onEndTimeChanged,
+  Function(String)? onAssigneChange,
   VoidCallback onClose,
 ) {
   final normalizedStatus = normalizeStatus(status);
   OverlayEntry? statusOverlayEntry;
   OverlayEntry? priorityOverlayEntry;
   OverlayEntry? dateOverlayEntry;
+  OverlayEntry? assigneeOverlayEntry;
   final LayerLink statusLayerLink = LayerLink();
   final LayerLink priorityLayerLink = LayerLink();
   final LayerLink dateLayerLink = LayerLink();
+  final LayerLink assigneeLayerLink = LayerLink();
   final ValueNotifier<String> currentStatus = ValueNotifier(normalizedStatus);
   final ValueNotifier<String> currentDescription = ValueNotifier(description);
   final ValueNotifier<String> currentPriority = ValueNotifier(priority);
   final ValueNotifier<String> currentEndTime = ValueNotifier(endTime);
   final ValueNotifier<DateTime> selectedDate = ValueNotifier(
-    endTime.isNotEmpty ? DateTime.tryParse(endTime) ?? DateTime.now() : DateTime.now(),
+    endTime.isNotEmpty
+        ? DateTime.tryParse(endTime) ?? DateTime.now()
+        : DateTime.now(),
   );
+  final ValueNotifier<String> currentAssignee = ValueNotifier(assignee);
 
   // Khởi tạo TextEditingController
   final descriptionController = TextEditingController();
@@ -164,15 +172,80 @@ OverlayEntry createDetailOverlayEntry(
     }
   }
 
+  void toggleAssigneeOverlay() {
+    final blocContext = context;
+    if (assigneeOverlayEntry != null) {
+      assigneeOverlayEntry?.remove();
+      assigneeOverlayEntry = null;
+    } else {
+      assigneeOverlayEntry = OverlayEntry(
+          builder: (context) => Positioned(
+                width: 200,
+                child: CompositedTransformFollower(
+                  link: assigneeLayerLink,
+                  showWhenUnlinked: false,
+                  offset: const Offset(0, 24),
+                  child: Material(
+                    elevation: 4.0,
+                    borderRadius: BorderRadius.circular(4.0),
+                    child: BlocProvider.value(
+                      value: BlocProvider.of<UserProjectBloc>(blocContext),
+                      child: BlocBuilder<UserProjectBloc, UserProjectState>(
+                        builder: (context, state) {
+                          if (state is UserProjectLoading) {
+                            return const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Center(child: CircularProgressIndicator()),
+                            );
+                          } else if (state is UserProjectsLoaded) {
+                            return Column(
+                              children: state.userProjects.isEmpty
+                                  ? [
+                                      const Padding(
+                                        padding: EdgeInsets.all(8.0),
+                                        child: Text('No members'),
+                                      ),
+                                    ]
+                                  : state.userProjects.map((member) {
+                                      return ListTile(
+                                        title: Text('User ${member.userId}'),
+                                        subtitle: Text(member.isManager
+                                            ? 'Manager'
+                                            : 'Member'),
+                                        onTap: () {
+                                          currentAssignee.value =
+                                              member.userId.toString();
+                                          onAssigneChange
+                                              ?.call(currentAssignee.value);
+                                          assigneeOverlayEntry?.remove();
+                                          assigneeOverlayEntry = null;
+                                        },
+                                      );
+                                    }).toList(),
+                            );
+                          } else {
+                            return const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Text('Failed to load members'),
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ));
+      Overlay.of(context).insert(assigneeOverlayEntry!);
+    }
+  }
+
   return OverlayEntry(
     builder: (context) => GestureDetector(
       onTap: () {
         statusOverlayEntry?.remove();
-        statusOverlayEntry = null;
         priorityOverlayEntry?.remove();
-        priorityOverlayEntry = null;
         dateOverlayEntry?.remove();
-        dateOverlayEntry = null;
+        assigneeOverlayEntry?.remove();
         onClose();
       },
       child: Material(
@@ -216,6 +289,7 @@ OverlayEntry createDetailOverlayEntry(
                             statusOverlayEntry?.remove();
                             priorityOverlayEntry?.remove();
                             dateOverlayEntry?.remove();
+                            assigneeOverlayEntry?.remove;
                             onClose();
                           },
                         ),
@@ -254,7 +328,8 @@ OverlayEntry createDetailOverlayEntry(
                                     vertical: 8,
                                   ),
                                   decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.grey[400]!),
+                                    border:
+                                        Border.all(color: Colors.grey[400]!),
                                     borderRadius: BorderRadius.circular(4.0),
                                     color: Colors.grey[100],
                                   ),
@@ -289,7 +364,21 @@ OverlayEntry createDetailOverlayEntry(
                       ),
                     ),
                     const SizedBox(height: 12),
-                    buildDetailRow('Assignee', assignee),
+                    CompositedTransformTarget(
+                      link: assigneeLayerLink,
+                      child: GestureDetector(
+                        onTap: toggleAssigneeOverlay,
+                        child: ValueListenableBuilder<String>(
+                          valueListenable: currentAssignee,
+                          builder: (context, value, child) {
+                            return buildDetailRow(
+                              'Assignee',
+                              value.isEmpty || value == '0' ? 'Select Assignee' : 'User $value',
+                            );
+                          },
+                        ),
+                      ),
+                    ),
                     CompositedTransformTarget(
                       link: priorityLayerLink,
                       child: GestureDetector(
@@ -313,7 +402,9 @@ OverlayEntry createDetailOverlayEntry(
                           builder: (context, value, child) {
                             return buildDetailRow(
                               'End Time',
-                              value.isEmpty ? 'Select Date' : formatDisplayDate(value),
+                              value.isEmpty
+                                  ? 'Select Date'
+                                  : formatDisplayDate(value),
                             );
                           },
                         ),
@@ -327,6 +418,7 @@ OverlayEntry createDetailOverlayEntry(
                           statusOverlayEntry?.remove();
                           priorityOverlayEntry?.remove();
                           dateOverlayEntry?.remove();
+                          assigneeOverlayEntry?.remove;
                           onClose();
                         },
                         style: ElevatedButton.styleFrom(

@@ -1,3 +1,4 @@
+import 'package:doan/features/presentation/pages/projects_pages.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -165,9 +166,16 @@ class TopBar extends StatelessWidget {
             title: 'Project',
             onTap: () => _showProjectOverlay(context),
           ),
-          TopBarItem(title: 'Notify'),
           const Spacer(),
-          const Icon(Icons.search),
+          TopBarItem(
+            icon: Icons.exit_to_app,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ProjectPage()),
+              );
+            },
+          )
         ],
       ),
     );

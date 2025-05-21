@@ -38,7 +38,6 @@ class BacklogProvider with ChangeNotifier {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
-    print("dâsdadad:$projectId");
     try {
       // Lấy danh sách sprint
       final sprints = await getSprintsUseCase.call(projectId);
@@ -153,7 +152,7 @@ class BacklogProvider with ChangeNotifier {
       // Kiểm tra nếu issue đã thuộc về backlog này
       if (_backlogIssues.any((i) => i.issueId == issue.issueId)) {
         print("Issue already exists in the backlog.");
-        return; 
+        return;
       }
 
       // Cập nhật issue qua API
@@ -322,6 +321,83 @@ class BacklogProvider with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       _errorMessage = 'Failed to update backlog issue description: $e';
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateIssueAssignee(
+      int sprintIndex, String issueId, int? newAssigneeId) async {
+    try {
+      final sprint = _sprints[sprintIndex];
+      final issue =
+          sprint.issues.firstWhere((i) => i.issueId.toString() == issueId);
+      final updatedIssue = Issue(
+        issueId: issue.issueId,
+        projectId: issue.projectId,
+        title: issue.title,
+        description: issue.description,
+        status: issue.status,
+        priority: issue.priority,
+        assigneeId: newAssigneeId,
+        created: issue.created,
+        endTime: issue.endTime,
+        sprintId: issue.sprintId,
+      );
+
+      // Cập nhật issue qua API
+      await updateIssueUseCase.call(updatedIssue);
+
+      // Cập nhật local state
+      final updatedIssues = sprint.issues
+          .map((i) => i.issueId == issue.issueId ? updatedIssue : i)
+          .toList();
+      _sprints[sprintIndex] = Sprint(
+        id: sprint.id,
+        projectId: sprint.projectId,
+        name: sprint.name,
+        description: sprint.description,
+        created: sprint.created,
+        endTime: sprint.endTime,
+        status: sprint.status,
+        priority: sprint.priority,
+        issues: updatedIssues,
+      );
+      _sprints = [..._sprints];
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'Failed to update issue assignee: $e';
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateBacklogIssueAssignee(
+      String issueId, int? newAssigneeId) async {
+    try {
+      final issue =
+          _backlogIssues.firstWhere((i) => i.issueId.toString() == issueId);
+      final updatedIssue = Issue(
+        issueId: issue.issueId,
+        projectId: issue.projectId,
+        title: issue.title,
+        description: issue.description,
+        status: issue.status,
+        priority: issue.priority,
+        assigneeId: newAssigneeId,
+        created: issue.created,
+        endTime: issue.endTime,
+        sprintId: null,
+      );
+
+      // Cập nhật issue qua API
+      await updateIssueUseCase.call(updatedIssue);
+
+      // Cập nhật local state
+      _backlogIssues = _backlogIssues
+          .map((i) => i.issueId == issue.issueId ? updatedIssue : i)
+          .toList();
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'Failed to update backlog issue assignee: $e';
       notifyListeners();
     }
   }
@@ -496,7 +572,8 @@ class BacklogProvider with ChangeNotifier {
     }
   }
 
-  Future<void> creatIssueToSprint(int sprintIndex, Issue issue, int ProjectId) async {
+  Future<void> creatIssueToSprint(
+      int sprintIndex, Issue issue, int ProjectId) async {
     try {
       // Kiểm tra sprintIndex hợp lệ
       if (sprintIndex < 0 || sprintIndex >= _sprints.length) {
@@ -592,16 +669,16 @@ class BacklogProvider with ChangeNotifier {
   }
 
   Future<void> createSprint(Sprint sprint, int ProjectId) async {
-  try {
-    // Tạo sprint qua API
-    await createSprintUseCase.call(sprint);
+    try {
+      // Tạo sprint qua API
+      await createSprintUseCase.call(sprint);
 
-    // Cập nhật local state
-    fetchBacklogData(ProjectId);
-    notifyListeners();
-  } catch (e) {
-    _errorMessage = 'Failed to create new sprint: $e';
-    notifyListeners();
+      // Cập nhật local state
+      fetchBacklogData(ProjectId);
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'Failed to create new sprint: $e';
+      notifyListeners();
+    }
   }
-}
 }
