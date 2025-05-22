@@ -11,9 +11,6 @@ class EventRemoteDataSource {
   Future<List<EventModel>> getEventsByProject(int projectId) async {
     final response = await apiClient.get('events/project/$projectId');
     final projectResponse = ProjectResponseDto.fromJson(response);
-    if (projectResponse.errorCode != 0) {
-      throw Exception(projectResponse.errorMessage);
-    }
     if (projectResponse.data is List<dynamic>) {
       return (projectResponse.data as List<dynamic>)
           .map((json) => EventModel.fromJson(json as Map<String, dynamic>))
